@@ -74,3 +74,16 @@ Details: [docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md).
 ## Demo business
 
 **Stratford Comfort Heating & Air** — HVAC repair, AC repair, furnace repair, maintenance; Stratford & Perth County; Mon–Fri 8:00–17:00; emergencies (gas smell, CO, fire, no heat in extreme cold) escalate immediately.
+
+## Legacy Python FastAPI MVP
+
+An earlier deterministic FastAPI MVP lives under `backend/` (Docker Compose + pytest).
+Architecture notes: [docs/python-mvp/ARCHITECTURE.md](docs/python-mvp/ARCHITECTURE.md).
+Env template: [backend/.env.example](backend/.env.example).
+Provider notes: [docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md).
+
+```bash
+cp backend/.env.example .env   # or keep separate
+docker compose up --build
+pytest -q
+```

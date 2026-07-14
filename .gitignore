@@ -1,6 +1,16 @@
+# Dependencies / build
+node_modules/
+.next/
+.out/
+dist/
+build/
+coverage/
+tsconfig.tsbuildinfo
+
 # Environment / secrets — never commit real values
 .env
 .env.local
+.env*.local
 *.pem
 *.key
 
@@ -15,8 +25,10 @@ venv/
 .ruff_cache/
 htmlcov/
 .coverage
-dist/
-build/
+
+# Tests / tooling
+playwright-report/
+test-results/
 
 # IDE / OS
 .idea/
@@ -25,3 +37,6 @@ build/
 
 # Docker volumes
 postgres_data/
+
+# Deploy
+.vercel/
