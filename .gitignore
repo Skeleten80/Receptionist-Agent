@@ -1,14 +1,42 @@
-node_modules
-.next
-.out
-dist
-coverage
+# Dependencies / build
+node_modules/
+.next/
+.out/
+dist/
+build/
+coverage/
+tsconfig.tsbuildinfo
+
+# Environment / secrets — never commit real values
 .env
 .env.local
 .env*.local
-playwright-report
-test-results
-.DS_Store
 *.pem
-.vercel
-tsconfig.tsbuildinfo
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Tests / tooling
+playwright-report/
+test-results/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Docker volumes
+postgres_data/
+
+# Deploy
+.vercel/

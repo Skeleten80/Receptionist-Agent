@@ -1,83 +1,89 @@
-# LocalAgent
+# Local AI Business Agent
 
-AI phone receptionist and lead-management SaaS for Ontario local service businesses.
+After-hours / missed-call AI receptionist for Stratford-area home-service businesses.
 
-**Positioning:** Never miss another customer call.  
-**Supporting:** LocalAgent answers calls, qualifies leads and books appointments while your team is busy doing the work.
+Deterministic call workflow with guardrails—not a multi-agent system. Reliability over autonomy.
 
-## Architecture summary
+## Architecture
 
-Next.js App Router (TypeScript) + Supabase (Postgres, Auth, Storage, RLS) + Vapi + Stripe + Twilio-compatible telephony + Google Calendar + Resend.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for file tree, schema, routes, and plan.  
+Privacy notes: [docs/PRIVACY_AND_RETENTION.md](docs/PRIVACY_AND_RETENTION.md).  
+Provider setup: [docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md).
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## Stack
 
-## Prerequisites
+- Python 3.12, FastAPI, PostgreSQL, SQLAlchemy, Alembic
+- Voice: Retell / Vapi / Mock (adapter interface)
+- Calendar: Google Calendar / Mock
+- LLM: hosted OpenAI-compatible (optional; mock for tests)
+- Docker Compose for local development
 
-- Node.js 20+
-- Supabase project (or local Supabase CLI)
-- Optional for full integrations: Stripe, Vapi, Twilio, Google OAuth, Resend credentials
-
-## Installation
-
-```bash
-cp .env.example .env.local
-npm install
-# Apply SQL in supabase/migrations/ via Supabase SQL editor or CLI
-npx supabase db push   # if using Supabase CLI
-npm run db:seed         # fictional demo data (never in production)
-npm run dev
-```
-
-Open http://localhost:3000
-
-## Environment variables
-
-See [.env.example](.env.example). Server-only secrets must never be prefixed with `NEXT_PUBLIC_`.
-
-## Database migrations
-
-Versioned SQL lives in `supabase/migrations/`. Apply with Supabase CLI or paste into the SQL editor. RLS is enabled for tenant tables; `integration_secrets` is service-role only.
-
-## Local development
-
-See [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md).
-
-With `VAPI_MOCK_MODE=true`, use **AI Receptionist → Simulate verified end-of-call webhook** to exercise call → customer → lead persistence without a live phone provider.
-
-## Provider setup
-
-- [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
-- [docs/VAPI_SETUP.md](docs/VAPI_SETUP.md)
-- [docs/TWILIO_SETUP.md](docs/TWILIO_SETUP.md)
-- [docs/GOOGLE_CALENDAR_SETUP.md](docs/GOOGLE_CALENDAR_SETUP.md)
-- [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md)
-
-## Testing
+## Quick start (mock voice + mock calendar)
 
 ```bash
-npm run test          # Vitest unit tests
-npm run typecheck
-npm run lint
-npm run test:e2e      # Playwright (app should be running or use config webServer)
+cp .env.example .env
+docker compose up --build -d
+# wait for API
+curl http://localhost:8000/health
+
+# seed demo business (also runs on startup if SEED_DEMO=true)
+docker compose exec api python -m app.seed.demo_business
+
+# admin API (demo key printed by seed / in .env.example)
+curl -H "X-API-Key: demo-api-key-stratford-comfort" http://localhost:8000/admin/business
+
+# simulate a scripted call without a phone provider
+curl -X POST http://localhost:8000/simulate/call \
+  -H "X-API-Key: demo-api-key-stratford-comfort" \
+  -H "Content-Type: application/json" \
+  -d '{"script":"booking_success"}'
+
+# or CLI
+docker compose exec api python -m app.cli simulate --script booking_success
 ```
 
-See [docs/TESTING.md](docs/TESTING.md).
+API docs: http://localhost:8000/docs
 
-## Deployment
+## Tests
 
-Vercel-compatible. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+```bash
+# from host with deps, or inside the api container
+cd backend
+pip install -r requirements.txt
+pytest -q ../tests
+```
 
-## Security warnings
+With Docker Postgres:
 
-- Never commit service-role keys, Stripe secrets, Vapi private keys, Twilio auth tokens, or Google client secrets.
-- Do not trust client-supplied `organization_id` without membership checks.
-- Webhooks must be signature-verified before side effects.
-- Obtain Canadian legal advice before production (privacy / call recording). See [docs/SECURITY.md](docs/SECURITY.md) and [docs/PRIVACY_AND_RETENTION.md](docs/PRIVACY_AND_RETENTION.md).
+```bash
+docker compose up -d db
+export DATABASE_URL=postgresql+psycopg://agent:agent@localhost:5432/agent
+export ADMIN_API_KEY_BOOTSTRAP=demo-api-key-stratford-comfort
+cd backend && alembic upgrade head && python -m app.seed.demo_business
+pytest -q ../tests
+```
 
-## Known limitations
+## Connect a real Retell or Vapi webhook
 
-- Google Calendar live booking requires completed OAuth setup.
-- Twilio auto-provisioning is credential-dependent; manual number registration is supported.
-- Privacy Policy / Terms are placeholders.
-- In-memory rate limiting is per-instance; use edge WAF in production.
-- Previous Python FastAPI MVP (if present on another branch) is superseded by this Next.js SaaS.
+1. Set `VOICE_PROVIDER=retell` or `vapi` and provider secrets in `.env`.
+2. Point the provider webhook to `POST https://<your-host>/webhooks/voice/retell` (or `/vapi`).
+3. Keep calendar in mock mode until Google OAuth is configured (`CALENDAR_PROVIDER=google`).
+
+Details: [docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md).
+
+## Demo business
+
+**Stratford Comfort Heating & Air** — HVAC repair, AC repair, furnace repair, maintenance; Stratford & Perth County; Mon–Fri 8:00–17:00; emergencies (gas smell, CO, fire, no heat in extreme cold) escalate immediately.
+
+## Legacy Python FastAPI MVP
+
+An earlier deterministic FastAPI MVP lives under `backend/` (Docker Compose + pytest).
+Architecture notes: [docs/python-mvp/ARCHITECTURE.md](docs/python-mvp/ARCHITECTURE.md).
+Env template: [backend/.env.example](backend/.env.example).
+Provider notes: [docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md).
+
+```bash
+cp backend/.env.example .env   # or keep separate
+docker compose up --build
+pytest -q
+```
