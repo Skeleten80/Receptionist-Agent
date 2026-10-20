@@ -13,8 +13,9 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
-os.environ.setdefault("SECRET_KEY", "test-secret-key")
-os.environ.setdefault("ADMIN_API_KEY_BOOTSTRAP", "demo-api-key-stratford-comfort")
+# Test-only values (never used outside the test suite); must pass the length check in app/config.py.
+os.environ.setdefault("SECRET_KEY", "test-only-secret-key-0123456789abcdef0123456789")
+os.environ.setdefault("ADMIN_API_KEY_BOOTSTRAP", "test-only-admin-api-key-0123456789abcdef")
 os.environ.setdefault("SEED_DEMO", "true")
 os.environ.setdefault("NOTIFY_EMAIL_DRY_RUN", "true")
 os.environ.setdefault("LLM_PROVIDER", "mock")
