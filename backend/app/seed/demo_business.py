@@ -18,8 +18,6 @@ from app.db.session import SessionLocal
 from app.services.prompt_builder import DEFAULT_PROMPT_TEMPLATE
 
 
-DEMO_API_KEY = "demo-api-key-stratford-comfort"
-
 DISCLOSURE = (
     "This call may be recorded and transcribed to help us assist you."
 )
@@ -31,7 +29,7 @@ def _hash_key(raw: str, secret: str) -> str:
 
 def seed_demo_business(db: Session) -> Business:
     settings = get_settings()
-    api_key = settings.admin_api_key_bootstrap or DEMO_API_KEY
+    api_key = settings.admin_api_key_bootstrap
     key_hash = _hash_key(api_key, settings.secret_key)
 
     existing = db.query(Business).filter(Business.api_key_hash == key_hash).one_or_none()
@@ -182,7 +180,7 @@ def main() -> None:
     try:
         biz = seed_demo_business(db)
         print(f"Demo business ready: {biz.name} ({biz.id})")
-        print(f"Admin API key (bootstrap): {settings.admin_api_key_bootstrap}")
+        print("Admin API key: the value of ADMIN_API_KEY_BOOTSTRAP in your environment")
     finally:
         db.close()
 

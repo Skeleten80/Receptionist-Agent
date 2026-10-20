@@ -22,6 +22,10 @@ Provider setup: [docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md).
 
 ```bash
 cp .env.example .env
+# REQUIRED: fill in SECRET_KEY and ADMIN_API_KEY_BOOTSTRAP in .env (each at least 32 chars).
+# The API refuses to start if either is missing, too short, or a known demo/placeholder value.
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(48))"
+python -c "import secrets; print('ADMIN_API_KEY_BOOTSTRAP=' + secrets.token_urlsafe(32))"
 docker compose up --build -d
 # wait for API
 curl http://localhost:8000/health
@@ -29,12 +33,13 @@ curl http://localhost:8000/health
 # seed demo business (also runs on startup if SEED_DEMO=true)
 docker compose exec api python -m app.seed.demo_business
 
-# admin API (demo key printed by seed / in .env.example)
-curl -H "X-API-Key: demo-api-key-stratford-comfort" http://localhost:8000/admin/business
+# admin API (use the ADMIN_API_KEY_BOOTSTRAP value from your .env)
+export ADMIN_KEY=<your ADMIN_API_KEY_BOOTSTRAP>
+curl -H "X-API-Key: $ADMIN_KEY" http://localhost:8000/admin/business
 
 # simulate a scripted call without a phone provider
 curl -X POST http://localhost:8000/simulate/call \
-  -H "X-API-Key: demo-api-key-stratford-comfort" \
+  -H "X-API-Key: $ADMIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{"script":"booking_success"}'
 
@@ -58,7 +63,9 @@ With Docker Postgres:
 ```bash
 docker compose up -d db
 export DATABASE_URL=postgresql+psycopg://agent:agent@localhost:5432/agent
-export ADMIN_API_KEY_BOOTSTRAP=demo-api-key-stratford-comfort
+export SECRET_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(48))")
+export ADMIN_API_KEY_BOOTSTRAP=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
+export SEED_DEMO=true
 cd backend && alembic upgrade head && python -m app.seed.demo_business
 pytest -q ../tests
 ```
